@@ -1,42 +1,46 @@
-# immer-deps.
-auto update dependencies, when immer's produce.
-
-# usage.
+# Immer-deps
+Auto update dependencies, when immer's produce.
 
 Current status: API designing
 
+# Conepts
+- Strongly typed
+- Keep immer's produce API
+- Support tree and graph structure
+
+# Usage
+
 ```ts
 import { produce } from 'immer';
-
-type Task = {
-  id: number;
-  name: string;
-  parentId: number | null;
-};
+import { deps } from 'immer-deps';
 
 type State = {
-  tasks: Task[];
+  tasks: {
+    id: number;
+    name: string;
+    parentId: number | null;
+  }[];
 };
 
+/**
+ * Wrap produce function.
+ */
 const produce = deps<State>(produce, define => ([
 
   /**
-   * You can define dependencies on part of state.
+   * Define dependencies on part of state.
    */
-  define('tasks', Number)((state, task) => {
-    if (state.tasks[task.parentId]) {
-      return [state.tasks[task.parentId]];
-    }
-    return [];
-  })
+  define('tasks', Number)((state, task) => (
+    state.tasks.filter(t => t.id === task.parentId
+  ) /* will needs option here? */)
 
 ]));
 
-const state = {
+const state: State = {
   tasks: [
     { id: 1, name: 'todo1', parentId: null },
-    { id: 1, name: 'todo1', parentId: 1 },
-    { id: 1, name: 'todo1', parentId: 2 },
+    { id: 2, name: 'todo2', parentId: 1 },
+    { id: 3, name: 'todo3', parentId: 2 },
   ]
 };
 

@@ -1,10 +1,10 @@
 {
   "name": "immer-deps",
   "version": "0.0.1",
-  "description": "auto update depenencies, when immer's produce.",
+  "description": "Auto update depenencies, when immer's produce.",
   "main": "lib/cjs/index.js",
   "scripts": {
-    "test": "jest"
+    "test": "jest --config jest.config.json"
   },
   "repository": {
     "type": "git",
@@ -26,6 +26,7 @@
     "@types/jest": "^23.3.13",
     "immer": "^1.12.1",
     "jest": "^23.6.0",
+    "ts-jest": "^23.10.5",
     "typescript": "^3.2.4"
   }
 }

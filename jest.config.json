@@ -1,0 +1,15 @@
+{
+  "testEnvironment": "node",
+  "transform": {
+    "^.+\\.tsx?$": "ts-jest"
+  },
+  "testRegex": "/test/[^/]*.test.tsx?$",
+  "globals": {
+    "ts-jest": {
+      "diagnostics": true,
+      "tsConfig": "tsconfig.json"
+    }
+  },
+  "moduleFileExtensions": ["ts", "tsx", "js", "jsx", "json"],
+  "modulePathIgnorePatterns": ["node_modules", "\\.git"]
+}

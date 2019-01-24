@@ -14,7 +14,7 @@ type Tail<U> = U extends [any, any, ...any[]]
     : never
   : never;
 
-export type DeepPath<State extends any, T extends Prop[]> = T extends keyof State
+export type DeepPath<State extends any, T extends Prop[]> = PropType<Head<T>> extends keyof State
   ? {
       0: State[PropType<Head<T>>];
       1: DeepPath<State[PropType<Head<T>>], Tail<T>>;
