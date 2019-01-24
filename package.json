@@ -1,0 +1,31 @@
+{
+  "name": "immer-deps",
+  "version": "0.0.1",
+  "description": "auto update depenencies, when immer's produce.",
+  "main": "lib/cjs/index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/hrsh7th/immer-deps.git"
+  },
+  "keywords": [
+    "immer",
+    "dependency",
+    "graph",
+    "tree"
+  ],
+  "author": "hrsh7th",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/hrsh7th/immer-deps/issues"
+  },
+  "homepage": "https://github.com/hrsh7th/immer-deps#readme",
+  "devDependencies": {
+    "@types/jest": "^23.3.13",
+    "immer": "^1.12.1",
+    "jest": "^23.6.0",
+    "typescript": "^3.2.4"
+  }
+}
