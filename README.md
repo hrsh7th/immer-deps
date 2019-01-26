@@ -25,7 +25,7 @@ type State = {
 /**
  * Wrap produce function.
  */
-const produce = deps<State>(produce, define => ([
+const produceWithDeps = deps<State>(produce, define => ([
 
   /**
    * Define dependencies on part of state.
@@ -44,7 +44,7 @@ const state: State = {
   ]
 };
 
-const next = produce(state, state => {
+const next = produceWithDeps(state, state => {
   state.tasks[2].name = 'todo3 - updated';
 });
 

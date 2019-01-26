@@ -24,6 +24,7 @@
   "homepage": "https://github.com/hrsh7th/immer-deps#readme",
   "devDependencies": {
     "@types/jest": "^23.3.13",
+    "@types/node": "^10.12.18",
     "immer": "^1.12.1",
     "jest": "^23.6.0",
     "ts-jest": "^23.10.5",

@@ -12,21 +12,40 @@ const state: State = {
   ]
 };
 
+const produceWithDeps = deps<State>(produce, define => ([
+
+  define('tasks', Number)((state, task) => {
+    return state.tasks.filter(t => t.id === task.parentId);
+  })
+
+]));
+
+
 describe('basic', () => {
 
-  it('tree structure', () => {
-    const next = deps<State>(produce, define => ([
+  describe('automatic update dependent values', () => {
 
-      define('tasks', Number)((state, task) => {
-        return state.tasks.filter(t => t.id === task.parentId);
-      })
+    it('tree', () => {
+      const next = produceWithDeps(state, state => {
+        state.tasks[1].name = 'task2 *';
+      });
+      expect(next.tasks[0]).not.toEqual(state.tasks[0]);
+      expect(next.tasks[1]).not.toEqual(state.tasks[1]);
+    })
 
-    ]))(state, state => {
-      state.tasks[1].name = 'task2 *';
+  });
+
+  describe('keep immer\'s api', () => {
+
+    it('patches', () => {
+      produceWithDeps(state, state => {
+        state.tasks[1].name = 'task2 *';
+      }, (patches, inversePatches) => {
+        expect(patches).toHaveLength(2);
+        expect(inversePatches).toHaveLength(2);
+      });
     });
-    expect(next.tasks[0]).toEqual(state.tasks[0]); // TODO: should not equals.
-    expect(next.tasks[1]).not.toEqual(state.tasks[1]);
+
   });
 
 });
-
