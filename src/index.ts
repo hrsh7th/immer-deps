@@ -21,23 +21,21 @@ export function deps<State>(
   produce: IProduce,
   deps: (define: Define<State>) => Definition<State, Prop[]>[]
 ) {
-  const definitions = deps((...path: Prop[]) => (
-    (resolve: Resolve<State, Prop[]>) => ({ path, resolve })
-  ));
-
-  const context: Context = {
-    markAsChanged: v4(),
-    patches: [],
-    inversePatches: [],
-    visited: new Visited()
-  };
+  const definitions = deps((...path: Prop[]) => {
+    return (resolve: Resolve<State, Prop[]>) => ({ path, resolve })
+  });
 
   const produceWithDeps = (state: State, recipe: (state: State) => void, patchListener?: PatchListener): State => {
     const mutates = [] as Mutate<State>[];
 
     const next = produce(state, recipe, (patches, inversePatches) => {
+      // @ts-ignore
+      patches = patches.filter(patch => patch.path[patch.path.length - 1] !== ImmerDepsMarkAsChangedSymbol);
+      // @ts-ignore
+      inversePatches = inversePatches.filter(patch => patch.path[patch.path.length - 1] !== ImmerDepsMarkAsChangedSymbol);
+
       definitions.forEach(definition => {
-        patches.forEach((patch, i) => {
+        patches.forEach(patch => {
           const path = matches(definition.path, patch.path);
           if (path.length && !context.visited.has(path)) {
             context.visited.add(path);
@@ -46,12 +44,12 @@ export function deps<State>(
                 dependency[ImmerDepsMarkAsChangedSymbol] = context.markAsChanged;
               });
             });
-          } else {
-            context.patches.push(patch);
-            context.inversePatches.push(inversePatches[i]);
           }
         });
       });
+
+      context.patches.push(...patches);
+      context.inversePatches.push(...inversePatches);
 
       if (!mutates.length) {
         patchListener && patchListener(context.patches, context.inversePatches);
@@ -67,7 +65,17 @@ export function deps<State>(
     return next;
   };
 
-  return produceWithDeps;
+
+  let context: Context;
+  return (state: State, recipe: (state: State) => void, patchListener?: PatchListener): State => {
+    context = {
+      markAsChanged: v4(),
+      patches: [],
+      inversePatches: [],
+      visited: new Visited()
+    };
+    return produceWithDeps(state, recipe, patchListener);
+  };
 
 }
 

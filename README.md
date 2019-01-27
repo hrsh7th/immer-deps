@@ -112,3 +112,8 @@ const next = produceWithDeps(state, state => {
 // `state.tasks[2]` was updated via it self`.
 ```
 
+# Todo
+- Support immer's produce API
+- Support environments without `Symbol`
+- Testing in real world apps
+
