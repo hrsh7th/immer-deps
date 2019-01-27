@@ -1,6 +1,6 @@
-export type Prop = keyof any | StringConstructor | NumberConstructor;
+export type Prop = keyof any | NumberConstructor;
 
-type PropType<P extends Prop> = P extends NumberConstructor ? number : P extends StringConstructor ? string : P;
+type PropType<P extends Prop> = P extends NumberConstructor ? number : P;
 
 type Head<U> = U extends [any, ...any[]]
   ? ((...args: U) => any) extends (head: infer H, ...args: any) => any

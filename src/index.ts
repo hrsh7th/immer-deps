@@ -1,15 +1,18 @@
-import { IProduce, Patch, PatchListener, isDraft } from 'immer';
+import { IProduce, Patch, PatchListener } from 'immer';
+import { v4 } from 'uuid';
 import { DeepPath, Prop } from './deep-path';
 
 export type Define<State> = <Paths extends Prop[] = Prop[]>(...paths: Paths) => Definer<State, Paths>;
-export type Definer<State, Paths extends Prop[]> = (resolver: Resolver<State, Paths>) => Definition<State, Paths>;
-export type Definition<State, Paths extends Prop[]> = { path: Prop[]; resolver: Resolver<State, Paths> };
-export type Resolver<State, Paths extends Prop[]> = (state: State, value: DeepPath<State, Paths>) => any[];
+export type Definer<State, Paths extends Prop[]> = (resolver: Resolve<State, Paths>) => Definition<State, Paths>;
+export type Definition<State, Paths extends Prop[]> = { path: Prop[]; resolve: Resolve<State, Paths> };
+export type Resolve<State, Paths extends Prop[]> = (state: State, value: DeepPath<State, Paths>) => any[];
+export type Mutate<State> = (state: State) => void;
 
 type Context = {
+  markAsChanged: string;
   patches: Patch[];
   inversePatches: Patch[];
-  markAsChangedValue: number;
+  visited: Visited;
 };
 
 const ImmerDepsMarkAsChangedSymbol = Symbol('immer-deps-mark-as-changed');
@@ -18,68 +21,70 @@ export function deps<State>(
   produce: IProduce,
   deps: (define: Define<State>) => Definition<State, Prop[]>[]
 ) {
-  const definitions = deps((...path: Prop[]) => {
-    return (resolver: Resolver<State, Prop[]>) => {
-      return {
-        path: path,
-        resolver: resolver
-      };
-    }
-  });
+  const definitions = deps((...path: Prop[]) => (
+    (resolve: Resolve<State, Prop[]>) => ({ path, resolve })
+  ));
 
-  return (state: State, recipe: (state: State) => void, patchListener?: PatchListener) => {
-    if (isDraft(state)) {
-      return produce(state, recipe, patchListener);
-    }
+  const context: Context = {
+    markAsChanged: v4(),
+    patches: [],
+    inversePatches: [],
+    visited: new Visited()
+  };
 
-    const context: Context = {
-      patches: [],
-      inversePatches: [],
-      markAsChangedValue: Date.now()
-    };
+  const produceWithDeps = (state: State, recipe: (state: State) => void, patchListener?: PatchListener): State => {
+    const mutates = [] as Mutate<State>[];
 
-    const current = produce(state, recipe, (patches, inversePatches) => {
-      context.patches.push(...patches);
-      context.inversePatches.push(...inversePatches);
-    });
-
-    return produce(current, state => {
+    const next = produce(state, recipe, (patches, inversePatches) => {
       definitions.forEach(definition => {
-        context.patches.forEach(patch => {
+        patches.forEach((patch, i) => {
           const path = matches(definition.path, patch.path);
-          if (path.length) {
-            const dependencies = definition.resolver(state as State, getIn(state, path));
-            dependencies.forEach(dependency => {
-              dependency[ImmerDepsMarkAsChangedSymbol] = context.markAsChangedValue;
+          if (path.length && !context.visited.has(path)) {
+            context.visited.add(path);
+            mutates.push(draft => {
+              definition.resolve(draft, getIn(draft, path)).forEach(dependency => {
+                dependency[ImmerDepsMarkAsChangedSymbol] = context.markAsChanged;
+              });
             });
+          } else {
+            context.patches.push(patch);
+            context.inversePatches.push(inversePatches[i]);
           }
         });
       });
-    }, (patches, inversePatches) => {
-      patchListener && patchListener(
-        [...context.patches, ...patches],
-        [...context.inversePatches, ...inversePatches]
-      )
+
+      if (!mutates.length) {
+        patchListener && patchListener(context.patches, context.inversePatches);
+      }
     });
+
+    if (mutates.length) {
+      return produceWithDeps(next, draft => {
+        mutates.forEach(mutate => mutate(draft));
+      }, patchListener);
+    }
+
+    return next;
   };
+
+  return produceWithDeps;
 
 }
 
 export function matches(matchers: Prop[], path: (keyof any)[]) {
-  let isMatches = true;
+  let isMatch = true;
   return matchers.reduce((matched, matcher, i) => {
-    if (!isMatches) {
+    if (!isMatch) {
       return [];
     }
 
     if (
       (matcher === Number && typeof path[i] === 'number') ||
-      (matcher === String && typeof path[i] === 'string') ||
       (matcher === path[i])
     ) {
       return [...matched, path[i]];
     } else {
-      isMatches = false;
+      isMatch = false;
     }
 
     return [];
@@ -93,3 +98,16 @@ export function getIn(state: any, path: (keyof any)[]): any {
   }
   return state[head];
 }
+
+class Visited {
+  private visited: { [key: string]: boolean } = {};
+
+  public has(path: (keyof any)[]) {
+    return !!this.visited[path.join('/')];
+  }
+
+  public add(path: (keyof any)[]) {
+    this.visited[path.join('/')] = true;
+  }
+}
+
