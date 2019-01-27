@@ -1,6 +1,6 @@
 {
   "name": "immer-deps",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Auto update depenencies, when immer's produce.",
   "main": "lib/cjs/index.js",
   "module": "lib/esm/index.js",
