@@ -10,6 +10,63 @@ Current status: API designing
 - Keep immer's produce API
 - Support tree and graph structure
 
+# Why?
+See below, Thats two state are same structure in my mental model.
+
+```ts
+const state = {
+  tasks: {
+    id: 1,
+    name: 'task1',
+    children: [{
+      id: 2,
+      name: 'task2',
+      children: [{
+        id: 3,
+        name: 'task3'
+      }]
+    }]
+  }
+};
+
+const next = produce(state, draft => {
+  draft.tasks.children[0].children[0].name = 'task3 - updated';
+});
+
+expect(next.tasks).not.toEqual(state.tasks);                                                 // `task1` updated.
+expect(next.tasks.children[0]).not.toEqual(state.tasks.children[0]);                         // `task2` updated.
+expect(next.tasks.children[0].children[0]).not.toEqual(state.tasks.children[0].children[0]); // `task3` updated.
+```
+
+```ts
+const state = {
+  tasks: [{
+    id: 1,
+    name: 'task1',
+    parentId: null
+  }, {
+    id: 2,
+    name: 'task2',
+    parentId: 1
+  }, {
+    id: 3,
+    name: 'task3',
+    parentId: 2
+  }]
+};
+
+const next = produce(state, draft => {
+  draft.tasks[2].name = 'task3 - updated';
+});
+
+expect(next.tasks[0]).not.toEqual(state.tasks[0]); // `task1` updated <- not work.
+expect(next.tasks[1]).not.toEqual(state.tasks[1]); // `task2` updated <- not work.
+expect(next.tasks[2]).not.toEqual(state.tasks[2]); // `task3` updated.
+```
+
+`immer-deps` solve this problem.
+
+
 # Usage
 
 ```ts
