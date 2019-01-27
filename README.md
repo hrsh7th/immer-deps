@@ -11,7 +11,7 @@ Current status: API designing
 - Support tree and graph structure
 
 # Why?
-See below, Thats two state are same structure in my mental model.
+See below, Thats two state are same structure in mental model.
 
 ```ts
 const state = {
