@@ -13,9 +13,10 @@ Current status: API designing
 # Why?
 See below, Thats two state are same structure in mental model.
 
+### 1. de-normalized tree state.
 ```ts
 const state = {
-  tasks: {
+  tasks: [{
     id: 1,
     name: 'task1',
     children: [{
@@ -26,45 +27,44 @@ const state = {
         name: 'task3'
       }]
     }]
-  }
+  }]
 };
 
 const next = produce(state, draft => {
   draft.tasks.children[0].children[0].name = 'task3 - updated';
 });
 
-expect(next.tasks).not.toEqual(state.tasks);                                                 // `task1` updated.
-expect(next.tasks.children[0]).not.toEqual(state.tasks.children[0]);                         // `task2` updated.
-expect(next.tasks.children[0].children[0]).not.toEqual(state.tasks.children[0].children[0]); // `task3` updated.
+// `task1` updated. ✓
+expect(next.tasks[0]).not.toEqual(state.tasks);
+// `task2` updated. ✓
+expect(next.tasks[0].children[0]).not.toEqual(state.tasks.children[0]);
+// `task3` updated. ✓
+expect(next.tasks[0].children[0].children[0]).not.toEqual(state.tasks.children[0].children[0]);
 ```
 
+### 2. normalized tree state.
 ```ts
 const state = {
-  tasks: [{
-    id: 1,
-    name: 'task1',
-    parentId: null
-  }, {
-    id: 2,
-    name: 'task2',
-    parentId: 1
-  }, {
-    id: 3,
-    name: 'task3',
-    parentId: 2
-  }]
+  tasks: [
+    { id: 1, name: 'task1', parentId: null },
+    { id: 2, name: 'task2', parentId: 1 },
+    { id: 3, name: 'task3', parentId: 2 }
+  ]
 };
 
 const next = produce(state, draft => {
   draft.tasks[2].name = 'task3 - updated';
 });
 
-expect(next.tasks[0]).not.toEqual(state.tasks[0]); // `task1` updated <- not work.
-expect(next.tasks[1]).not.toEqual(state.tasks[1]); // `task2` updated <- not work.
-expect(next.tasks[2]).not.toEqual(state.tasks[2]); // `task3` updated.
+// `task1` updated. 💥
+expect(next.tasks[0]).not.toEqual(state.tasks[0]);
+// `task2` updated. 💥
+expect(next.tasks[1]).not.toEqual(state.tasks[1]);
+// `task3` updated. ✓
+expect(next.tasks[2]).not.toEqual(state.tasks[2]);
 ```
 
-`immer-deps` solve this problem.
+`immer-deps` solve this mismatching in mental model.
 
 
 # Usage
@@ -115,5 +115,6 @@ const next = produceWithDeps(state, state => {
 # Todo
 - Support immer's produce API
 - Support environments without `Symbol`
+- Support adding/deleting state
 - Testing in real world apps
 
